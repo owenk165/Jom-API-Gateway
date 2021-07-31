@@ -67,6 +67,7 @@ export const createLink = async (riakClient, myData) => {
             reject("URL to be shorten is invalid");
 
         // Generate random a-zA-Z0-9
+        // randomized key is unlikely to collide, checkLink() is not run
         var urlKey = crypto.randomBytes(28).toString('base64').replace(/\+/g, '').replace(/\//g, '').replace(/\=/g, '').slice(0, 8);
         // 28 Day difference in epoch
         var expiryDateUNIX = Date.now() + ( 28 * 24 * 60 * 60000);

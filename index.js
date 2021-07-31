@@ -4,7 +4,7 @@ var bodyParser = require('body-parser');
 var PORT = 1818;
 import createClientConnection, { endClientConnection, testConnection, 
     testCreateLink, getLink, createLink, deleteLink, testUpdateLink, updateURLKey,
-    batchRetrieveKeyList, batchRetrieveURLKeyData } from './riakConnection.js';
+    checkLink, batchRetrieveKeyList, batchRetrieveURLKeyData } from './riakConnection.js';
 
 
 var riakClient;
@@ -96,12 +96,24 @@ app.get('/goto/:URLKey', (req, res) => {
 });
 
 // Deletes shortened URL with the given credential (ownerUsername)
+// Takes ownerUsername, urlKey
 // [!] Redundant parameter
 app.delete('/delete/:URLKey', (req, res) => {
     (async function () {
         var response = await deleteLink(riakClient, req.body).catch( error => { console.log(error);});
         console.log('[Express] [Delete]');
         console.log(response);
+        res.send(response);
+    })();
+});
+
+// Checks if URL Key is available
+// Returns status: 'ok' and 'not-ok'
+app.post('/check/:URLKey', (req, res) => {
+    (async function(){
+        var URLKey = req.params.URLKey;
+        var response = await checkLink(riakClient, URLKey).catch(error => { console.log(error); });
+        console.log('[Express] [Check URL]');
         res.send(response);
     })();
 });
