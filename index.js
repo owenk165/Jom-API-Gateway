@@ -141,5 +141,7 @@ app.post('/batchRetrieve', (req,res) => {
 });
 
 app.listen(PORT, () => {
-    console.log('[+] Server is listening on localhost:', PORT);
+    var site = 'http://localhost:'+PORT+'/';
+    var site2 = 'http://127.0.0.1:'+PORT+'/';
+    console.log('[+] Server is listening on '+site + ' or '+site2);
 });
