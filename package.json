@@ -1,0 +1,25 @@
+{
+  "name": "API-Gateway",
+  "version": "1.0.0",
+  "description": "API Gateway server for URL Shortener site using riak kv database",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --trace-warnings --exec babel-node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "basho-riak-client": "^2.4.0",
+    "body-parser": "^1.19.0",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.8",
+    "@babel/node": "^7.14.7",
+    "@babel/preset-env": "^7.14.8",
+    "nodemon": "^2.0.12"
+  }
+}
