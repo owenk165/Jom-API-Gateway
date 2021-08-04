@@ -1,6 +1,8 @@
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
+var cors = require('cors')
+
 var PORT = 1818;
 import createClientConnection, { endClientConnection, testConnection, 
     testCreateLink, getLink, createLink, deleteLink, testUpdateLink, updateURLKey,
@@ -26,12 +28,13 @@ function checkConnection(req, res, next) {
     console.log('[checkConnection()] Logged');
     if (riakClient.hasError){
         console.log('Error in connecting to database');
-        res.send('Error in connecting to database');
+        res.send({status:'error', error:'Error in connecting to database'});
     } else {
         next();
     }
 }
 
+app.use(cors())
 app.use(checkConnection);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -43,9 +46,11 @@ app.get('/', (req, res) => {
 // Fetches a sample key-value
 app.get('/fetchSomething', (req, res) => {
     (async function(){
-        var response = await testConnection(riakClient, 'key-value-store-demo2');
-        console.log('response');
-        console.log(response);
+        var URLKey = "oWwmv3Sa";
+        var response = await getLink(riakClient, URLKey).catch((error) => response = error);
+        // var response = await testConnection(riakClient, 'key-value-store-demo2');
+        // console.log('response');
+        // console.log(response);
         res.send(response);
     })();
 });

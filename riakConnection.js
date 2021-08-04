@@ -98,7 +98,8 @@ export const createLink = async (riakClient, myData) => {
         console.log(riakObj);
 
         var successReturnData = {
-            status: 'success',
+            status: 'ok',
+            ownerUsername: ownerUsername,
             urlKey: urlKey,
             expiryDateUNIX: data.expiryDateUNIX
         }
@@ -106,7 +107,6 @@ export const createLink = async (riakClient, myData) => {
         riakClient.storeValue({ value: riakObj }, function (error, result) {
             if (error) {
                 reject({status:'error', error: error});
-                throw new Error(error);
             } else {
                 resolve(successReturnData);
             }
