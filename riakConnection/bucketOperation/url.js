@@ -349,8 +349,6 @@ export const testCreateLink = async (riakClient) => {
         riakObj.setValue(data);
         riakObj.addToIndex('ownerUsername_bin', data.ownerUsername);
         riakObj.addToIndex('expiryDateUNIX_bin', data.expiryDateUNIX);
-        console.log('riak object <3');
-        console.log(riakObj);
         riakClient.storeValue({ value: riakObj }, function (error, result) {
             if (error) {
                 reject(error)

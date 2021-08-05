@@ -17,7 +17,6 @@ import {
 
 var riakClient;
 
-
 app.use(cors({ origin: '*' }));
 app.use(checkConnection);
 app.use(bodyParser.json());

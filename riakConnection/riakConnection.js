@@ -1,6 +1,4 @@
 import Riak from "basho-riak-client/lib/client";
-var crypto = require("crypto");
-
 var RiakClient = require("basho-riak-client").Client;
 
 // Specify ports of riak database nodes

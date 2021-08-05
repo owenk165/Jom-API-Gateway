@@ -190,7 +190,7 @@ export const createUser = async (riakClient, myData) => {
                                 riakObj.setKey(data.username);
                                 riakObj.setValue(data);
                                 riakObj.addToIndex('email_bin', data.email);
-                                console.log('[createUser]');
+                                console.log('[createUser] To be inserted value:');
                                 console.log(riakObj);
     
                                 var successReturnData = {
