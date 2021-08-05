@@ -1,51 +1,10 @@
 import Riak from "basho-riak-client/lib/client";
 var crypto = require("crypto");
 
-var RiakClient = require("basho-riak-client").Client;
-
-// Specify ports of riak database nodes
-var riakNodes = ['localhost:8087'];
-
-export default async function createClientConnection() {
-    return new Promise((resolve, reject) => {
-        var riakClient = new RiakClient(riakNodes, (error, client) => {
-            console.log('has error? -> ', error)
-            if (error) {
-                console.log('error indeed');
-                error.hasError = true;
-                reject(error);
-                // throw new Error(error);
-            } else {
-                console.log("[+] Connection has been established with Riak nodes at: ", riakNodes);
-    
-                riakClient.ping((error) => {
-                    if (error) {
-                        reject("[riakClient.ping()] Error in connecting to database");
-                        // throw new Error(error);
-                    } else {
-                    console.log("[+] Ping is successful");
-                    resolve(riakClient);
-                    }
-                });
-            }
-        })
-    });
-}
-
-export const endClientConnection = (riakClient) => {
-    riakClient.stop((error) => {
-        if (error) {
-            console.error(error);
-        } else {
-            console.log("[!] Connection has been closed");
-        }
-    });
-}
-
 /** 
  * Checks if URL is valid. Accept html, htmls, and magnet:?xt=urn:
  *  @param {String} string - URL in string format
- */ 
+ */
 function isValidURL(string) {
     // Check if matches basic url
     var res = string.match(/(^((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)))+$/g);
@@ -67,14 +26,13 @@ export const createLink = async (riakClient, myData) => {
             reject("URL to be shorten is invalid");
 
         // Generate random a-zA-Z0-9
-        // randomized key is unlikely to collide, checkLink() is not run
         var urlKey = crypto.randomBytes(28).toString('base64').replace(/\+/g, '').replace(/\//g, '').replace(/\=/g, '').slice(0, 8);
         // 28 Day difference in epoch
-        var expiryDateUNIX = Date.now() + ( 28 * 24 * 60 * 60000);
+        var expiryDateUNIX = Date.now() + (28 * 24 * 60 * 60000);
         var ownerUsername = '-';
 
         // Override data if user is logged in
-        if (myData.username){
+        if (myData.username) {
             expiryDateUNIX = '-';
             ownerUsername = myData.username;
         }
@@ -98,15 +56,15 @@ export const createLink = async (riakClient, myData) => {
         console.log(riakObj);
 
         var successReturnData = {
-            status: 'ok',
-            ownerUsername: ownerUsername,
+            status: 'success',
             urlKey: urlKey,
             expiryDateUNIX: data.expiryDateUNIX
         }
 
         riakClient.storeValue({ value: riakObj }, function (error, result) {
             if (error) {
-                reject({status:'error', error: error});
+                reject({ status: 'error', error: error });
+                throw new Error(error);
             } else {
                 resolve(successReturnData);
             }
@@ -122,6 +80,7 @@ export const createLink = async (riakClient, myData) => {
  */
 export const checkLink = async (riakClient, myData) => {
     console.log('[checkLink] Check link request');
+
     return new Promise((resolve, reject) => {
         riakClient.fetchValue({
             bucket: 'URL',
@@ -132,10 +91,10 @@ export const checkLink = async (riakClient, myData) => {
                 console.log('[checkLink] Database fetch error');
                 reject({ status: "error", error: error });
             } else {
-                if (result.isNotFound){
-                    resolve({status: 'ok', message: 'URL Key is available'});
+                if (result.isNotFound) {
+                    resolve({ status: 'ok', message: 'URL Key is available' });
                 } else {
-                    resolve({status: 'not-ok', message: 'URL Key has been used for other link'});
+                    resolve({ status: 'not-ok', message: 'URL Key has been used for other link' });
                 }
             }
         });
@@ -170,7 +129,7 @@ export const checkOwnership = async (riakClient, myData) => {
                     var riakValue = result.values.shift().value;
 
                     if (riakValue.ownerUsername == myData.ownerUsername) {
-                        resolve({status: 'success', message: 'User have ownership for the link '+riakValue.urlKey})
+                        resolve({ status: 'success', message: 'User have ownership for the link ' + riakValue.urlKey })
                     } else {
                         // Resolve? Reject?
                         console.log('[checkOwnership] Invalid ownership request');
@@ -219,12 +178,14 @@ export const deleteLink = async (riakClient, myData) => {
         (async function () {
             await checkOwnership(riakClient, myData).then(() => {
                 genericDelete(riakClient, 'URL', myData.urlKey)
-                    .then((result) => { 
-                        console.log('[deleteLink] Database delete error');
-                        resolve(result); })
-                    .catch((error) => {
+                    .then((result) => {
                         console.log('[deleteLink] Key-value delete success');
-                        reject(error);});
+                        resolve(result);
+                    })
+                    .catch((error) => {
+                        console.log('[deleteLink] Database delete error');
+                        reject(error);
+                    });
             }).catch((error) => reject(error));
         })();
     });
@@ -240,16 +201,16 @@ export const updateURLKey = async (riakClient, myData) => {
     console.log('[updateURLKey] Update URL Key request');
 
     return new Promise((resolve, reject) => {
-        (async function(){
+        (async function () {
             // Check if new URLKey is available
-            await checkLink(myData.newUrlKey)
+            await checkLink(riakClient, { "urlKey": myData.newUrlKey })
                 .then((res) => {
-                    if(res.status == 'not-ok'){
-                        reject({status: res.status, message: res.message});
-                    } 
+                    if (res.status == 'not-ok') {
+                        reject({ status: res.status, message: res.message });
+                    }
                     // Fetch old data, update key, delete with auth check, create new data
                     // Delete will takes precedence over create here
-                    else if (res.status == 'ok'){
+                    else if (res.status == 'ok') {
 
                         riakClient.fetchValue({
                             bucket: 'URL',
@@ -272,7 +233,7 @@ export const updateURLKey = async (riakClient, myData) => {
                                             riakClient.storeValue({ value: riakObject }, function (error, result2) {
                                                 if (error) {
                                                     console.log('[updateURLKey] Record create error');
-                                                    reject({status: 'error', error: error});
+                                                    reject({ status: 'error', error: error });
                                                 } else {
                                                     console.log('[updateURLKey] Record update successful');
                                                     resolve({ status: "success", result: result2 });
@@ -280,12 +241,14 @@ export const updateURLKey = async (riakClient, myData) => {
                                             });
                                         })
                                         .catch((error) => {
-                                            reject({ status: "error", error: error });});
+                                            reject({ status: "error", error: error });
+                                        });
                                 }
                             }
-                        });                        
-                    }})
-                .catch((error) => reject({status: "error", error: error}));
+                        });
+                    }
+                })
+                .catch((error) => reject({ status: "error", error: error }));
         })();
     });
 }
@@ -303,7 +266,7 @@ export const batchRetrieveKeyList = async (riakClient, myData) => {
 
     var query_keys = [];
     return new Promise((resolve, reject) => {
-        function queryCallback(err, rslt) { 
+        function queryCallback(err, rslt) {
             /* rslt is in format of:
             {
                 values: [ { indexKey: null, objectKey: 'UPKdlpyQ' } ],
@@ -315,6 +278,7 @@ export const batchRetrieveKeyList = async (riakClient, myData) => {
                 reject({ status: "error", error: error });
             }
 
+            // This will run last
             if (rslt.done) {
                 query_keys.forEach(function (key) {
                     console.log("2i query key: '%s'", key);
@@ -327,7 +291,7 @@ export const batchRetrieveKeyList = async (riakClient, myData) => {
             if (rslt.values.length > 0) {
                 Array.prototype.push.apply(query_keys,
                     rslt.values.map(function (value) {
-                            return value.objectKey;
+                        return value.objectKey;
                     }));
             }
         }
@@ -338,9 +302,9 @@ export const batchRetrieveKeyList = async (riakClient, myData) => {
             .withIndexKey(myData.ownerUsername)
             .withCallback(queryCallback)
             .build();
-            riakClient.execute(cmd);
+        riakClient.execute(cmd);
     });
-} 
+}
 
 /**
  * Retrieves all the URL Link data from a given array of URL Keys
@@ -352,10 +316,11 @@ export const batchRetrieveURLKeyData = async (riakClient, query_keys) => {
     console.log('[batchRetrieveURLKeyData] Retrieve link list data request');
 
     return new Promise((resolve, reject) => {
-        (async function(){
-            const promises = query_keys.map(key => getLink(riakClient, key).then(result => {return result;}));
+        (async function () {
+            const promises = query_keys.map(key => getLink(riakClient, key).then(result => { return result; }));
             const allURLData = await Promise.all(promises)
-            resolve(allURLData);}
+            resolve(allURLData);
+        }
         )();
     });
 }
@@ -364,10 +329,10 @@ export const batchRetrieveURLKeyData = async (riakClient, query_keys) => {
 // Createse sample of shortened link with deeefined redirectLink and ownerUsername
 export const testCreateLink = async (riakClient) => {
     console.log('[testCreateLink] Create link request');
-    
+
     return new Promise((resolve, reject) => {
         // 28 Day difference in epoch
-        var expiryDateDiffInMinutes = 28*24*60*60000;
+        var expiryDateDiffInMinutes = 28 * 24 * 60 * 60000;
         // Generate random a-zA-Z0-9
         var urlKey = crypto.randomBytes(28).toString('base64').replace(/\+/g, '').replace(/\//g, '').replace(/\=/g, '').slice(0, 8);
         var data = {
@@ -405,6 +370,8 @@ export const testCreateLink = async (riakClient) => {
             createdDateUNIX, redirectLink }
  */
 export const getLink = async (riakClient, URLKey) => {
+    console.log('[getLink] Get link request');
+
     return new Promise((resolve, reject) => {
         riakClient.fetchValue({
             bucket: 'URL',
@@ -412,17 +379,19 @@ export const getLink = async (riakClient, URLKey) => {
             convertToJs: true
         }, (error, result) => {
             if (error) {
-                reject({status: 'error', error: error});
+                reject({ status: 'error', error: error });
             } else {
                 if (!result.isNotFound) {
                     var riakObject = result.values.shift();
 
                     var riakValue = riakObject.value;
+                    riakValue.status = 'ok';
                     console.log("[getLink] Retrieved object key: " + URLKey + " value: " + riakValue);
                     console.log(riakValue);
                     resolve(riakValue);
-                } else
-                    reject({status: 'not-ok'});
+                } else {
+                    reject({ status: 'not-ok', message: 'URL key is not valid' });
+                }
             }
         });
     });
@@ -450,7 +419,7 @@ export const testUpdateLink = async (riakClient, myData) => {
                             throw new Error(err);
                         }
                     });
-                    resolve({status:"success"});
+                    resolve({ status: "success" });
                 }
                 // resolve({isNotFound:true});
                 reject("URL does not exist");
