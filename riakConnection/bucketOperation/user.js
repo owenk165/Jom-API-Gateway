@@ -1,6 +1,8 @@
 import Riak from "basho-riak-client/lib/client";
 import { genericDelete } from "./url.js";
 const bcrypt = require('bcrypt');
+const dotenv = require('dotenv')
+dotenv.config({ path: './.env' });
 
 function isValidUsernameFormat(username){
     var res = username.match(/^[A-Za-z0-9._]{4,20}$/);
@@ -265,8 +267,8 @@ export const changePassword = async (riakClient, myData) => {
                         }
                     });
                 } else {
-                    console.log('[changePassword] Given username does not match email username');
-                    resolve({ status: 'not-ok', message:'Given username does not match email username'})
+                    console.log('[changePassword] Given username does not match email of username');
+                    resolve({ status: 'not-ok', message:'Given username does not match email of username'})
                 }
                 resolve(result);
 
@@ -315,6 +317,8 @@ export const loginAccount = async (riakClient, myData) => {
                         })
                         .catch(err => reject(err));
                     })();
+                } else {
+                    resolve({ status: 'not-ok', message: 'Account does not exist' });
                 }
             }
         });
@@ -322,23 +326,27 @@ export const loginAccount = async (riakClient, myData) => {
 }
 
 /**
- * For testing only, removes user but retains the URL(s) created by the user
+ * For backend/developer access only. Removed user's URL will still be retained.
  * @param {RiakClient} riakClient - RiakClient Object
- * @param {JSON} myData - JSON Object containing { String: username }
+ * @param {JSON} myData - JSON Object containing { String: username, String: deleteKey }
  */
 export const deleteAccount = async (riakClient, myData) => {
     console.log('[deleteAccount] Delete account request');
 
     return new Promise((resolve, reject) => {
-        genericDelete(riakClient, 'USER', myData.username)
-            .then((result) => {
-                console.log('[deleteAccount] Key-value delete success');
-                resolve(result);
-            })
-            .catch((error) => {
-                console.log('[deleteAccount] Database delete error');
-                reject(error);
-            });
+        if(myData.deleteKey == process.env.delete_key){
+            genericDelete(riakClient, 'USER', myData.username)
+                .then((result) => {
+                    console.log('[deleteAccount] Key-value delete success');
+                    resolve(result);
+                })
+                .catch((error) => {
+                    console.log('[deleteAccount] Database delete error');
+                    reject(error);
+                });
+        } else {
+            reject({status: 'not-ok', message: 'Delete key is incorrect'})
+        }
     });
 }
 

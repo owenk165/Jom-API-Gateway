@@ -105,7 +105,7 @@ app.post('/goto/:URLKey', (req, res) => {
 app.post('/batchRetrieve', (req, res) => {
     (async function () {
         console.log('[Express] [testBatchRetrieve]');
-        var response0 = await batchRetrieveKeyList(riakClient, req.body).catch(error => { console.log(error); });
+        var response0 = await batchRetrieveKeyList(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         var response = await batchRetrieveURLKeyData(riakClient, response0).then(result => res.send(result)).catch(error => console.log(error));
 
         // [!] If promise.all fails to loop, opt for timeout for batch retrieval
@@ -122,7 +122,7 @@ app.post('/batchRetrieve', (req, res) => {
 // {JSON} JSON Object containing { String: oldUrlKey, String: newUrlKey, String: ownerUsername }
 app.post('/update/:URLKey', (req, res) => {
     (async function () {
-        var response = await updateURLKey(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await updateURLKey(riakClient, req.body).catch(error => { console.log("error"); res.send(error);});
         console.log('[Express] [Update]');
         console.log(response);
         res.send(response);
@@ -140,7 +140,7 @@ app.post('/update/:URLKey', (req, res) => {
 // [!] Redundant parameter
 app.delete('/delete/:URLKey', (req, res) => {
     (async function () {
-        var response = await deleteLink(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await deleteLink(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         console.log('[Express] [Delete]');
         console.log(response);
         res.send(response);
@@ -179,7 +179,7 @@ app.get('/fetchSomething', (req, res) => {
 app.post('/check/:URLKey', (req, res) => {
     (async function(){
         var URLKey = req.params.URLKey;
-        var response = await checkLink(riakClient, URLKey).catch(error => { console.log(error); });
+        var response = await checkLink(riakClient, URLKey).catch(error => { console.log(error); res.send(error); });
         console.log('[Express] [Check URL]');
         res.send(response);
     })();
@@ -190,7 +190,7 @@ app.post('/check/:URLKey', (req, res) => {
 // [!] Pending remove
 app.post('/testupdate/:URLKey', (req, res) => {
     (async function() {
-        var response = await testUpdateLink(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await testUpdateLink(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         console.log('[Express] [UpdateTest]');
         console.log(response);
         res.send(response);
@@ -218,7 +218,7 @@ app.post('/testupdate/:URLKey', (req, res) => {
 app.post('/createUser', (req, res) => {
     (async function () {
         console.log('[Express] [createUser]');
-        var response = await createUser(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await createUser(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         res.send(response);
     })();
 });
@@ -233,7 +233,7 @@ app.post('/createUser', (req, res) => {
 app.post('/findUser', (req, res) => {
     (async function () {
         console.log('[Express] [findUser]');
-        var response = await findUser(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await findUser(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         res.send(response);
     })();
 });
@@ -243,7 +243,7 @@ app.post('/findUser', (req, res) => {
 app.post('/loginAccount', (req, res) => {
     (async function () {
         console.log('[Express] [loginAccount]');
-        var response = await loginAccount(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await loginAccount(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         res.send(response);
     })();
 });
@@ -259,7 +259,7 @@ app.post('/loginAccount', (req, res) => {
 app.put('/changePassword', (req, res) => {
     (async function () {
         console.log('[Express] [changePassword]');
-        var response = await changePassword(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await changePassword(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         res.send(response);
     })();
 });
@@ -274,7 +274,7 @@ app.put('/changePassword', (req, res) => {
 app.delete('/deleteAccount', (req, res) => {
     (async function () {
         console.log('[Express] [deleteAccount]');
-        var response = await deleteAccount(riakClient, req.body).catch(error => { console.log(error); });
+        var response = await deleteAccount(riakClient, req.body).catch(error => { console.log(error); res.send(error); });
         res.send(response);
     })();
 });
